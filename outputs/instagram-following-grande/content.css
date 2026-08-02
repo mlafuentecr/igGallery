@@ -1,7 +1,7 @@
 .ig-following-large-dialog {
   width: min(98vw, 1200px) !important;
   max-width: 98vw !important;
-  min-height: min(90vh, 940px) !important;
+  min-height: min(96vh, 1120px) !important;
 }
 
 /* Instagram nests the visible modal several levels inside [role=dialog], each
@@ -29,9 +29,16 @@
 /* The panel is identified by the content script as the first flex container
    around the list. Enlarging this panel preserves Instagram's centering. */
 .ig-following-modal-panel {
-  height: min(78vh, 800px) !important;
-  min-height: min(78vh, 800px) !important;
-  max-height: 78vh !important;
+  height: min(88vh, 1000px) !important;
+  min-height: min(88vh, 1000px) !important;
+  max-height: 88vh !important;
+}
+
+/* The current Instagram modal caps a chain of unnamed wrappers at 400 px.
+   The content script marks that chain so the list can use the taller panel. */
+.ig-following-modal-shell {
+  height: min(88vh, 1000px) !important;
+  max-height: 88vh !important;
 }
 
 .ig-following-scroll-area {
@@ -43,6 +50,9 @@
 .ig-following-grid {
   display: grid !important;
   grid-template-columns: repeat(var(--ig-following-columns, 2), minmax(0, 1fr)) !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 100% !important;
   gap: 14px !important;
   align-items: stretch !important;
   padding: 14px !important;
@@ -64,10 +74,22 @@
   border: 1px solid rgba(115, 115, 115, .35) !important;
   border-radius: 14px !important;
   text-align: center !important;
+  width: 100% !important;
 }
 
 .ig-following-card > * {
   max-width: 100% !important;
+}
+
+/* Keep the identity and Follow control in the same centered card as the
+   enlarged avatar, even when Instagram adds intermediary wrapper elements. */
+.ig-following-card a,
+.ig-following-card button {
+  max-width: 100% !important;
+}
+
+.ig-following-card button {
+  align-self: center !important;
 }
 
 .ig-following-large-avatar-wrapper {

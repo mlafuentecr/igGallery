@@ -14,7 +14,6 @@
   let settings = { ...DEFAULTS };
   let queued = false;
   let autoScrollTimer;
-  let autoScrollIdleTicks = 0;
 
   const getDialogs = () => [...document.querySelectorAll('[role="dialog"]')];
   const PAGE_POSITION_KEY = `ig-following-grande:scroll:${location.pathname}`;
@@ -42,10 +41,11 @@
     for (let depth = 0; node && node !== dialog && depth < 10; depth += 1, node = node.parentElement) {
       const box = node.getBoundingClientRect();
       const profiles = node.querySelectorAll("img[alt*='profile picture']").length;
-      // A list card has one profile picture and its three visible parts:
-      // photo, identity and follow control. Unlike its size, that structure
-      // stays stable when a previous layout has already enlarged the photo.
-      if (box.width > 180 && profiles === 1 && node.children.length >= 2 && node.children.length <= 5) return node;
+      const controls = node.querySelectorAll('button').length;
+      // A complete list card contains one profile picture plus identity and a
+      // Follow/Following control. The small avatar button also meets many size
+      // tests, so require the actual action control before selecting the card.
+      if (box.width > 180 && profiles === 1 && controls >= 1 && node.children.length >= 3 && node.children.length <= 5) return node;
     }
     return null;
   };
@@ -54,7 +54,11 @@
     const rowSet = new Set(rows);
     for (const row of rows) {
       let node = row.parentElement;
-      for (let depth = 0; node && node !== dialog && depth < 6; depth += 1, node = node.parentElement) {
+      // Recent Instagram builds add several wrapper nodes between each profile
+      // entry and the list itself. Search far enough to reach the element whose
+      // direct children are the individual profile entries, without relying on
+      // Instagram's unstable class names.
+      for (let depth = 0; node && node !== dialog && depth < 14; depth += 1, node = node.parentElement) {
         const matchingChildren = [...node.children].filter((child) =>
           child === row || [...rowSet].some((candidate) => child.contains(candidate))
         );
@@ -68,10 +72,17 @@
     if (!grid) return;
     let panel = grid.parentElement;
     for (let depth = 0; panel && panel !== dialog && depth < 8; depth += 1, panel = panel.parentElement) {
-      if (getComputedStyle(panel).display === 'flex') break;
+      // Small, single-child flex wrappers sit inside the current Instagram
+      // modal. The actual panel contains the header, search and profile list.
+      if (getComputedStyle(panel).display === 'flex' && panel.children.length >= 3) break;
     }
     if (!panel || panel === dialog) return;
     panel.classList.toggle('ig-following-modal-panel', enabled);
+    // Instagram caps several unnamed ancestors of the visible panel at a
+    // short height. Mark that shell too so the list can use the tall layout.
+    for (let shell = panel; shell && shell !== dialog; shell = shell.parentElement) {
+      shell.classList.toggle('ig-following-modal-shell', enabled);
+    }
     let node = grid.parentElement;
     for (let depth = 0; node && node !== panel; depth += 1, node = node.parentElement) {
       const overflow = getComputedStyle(node).overflow;
@@ -81,48 +92,82 @@
     }
   };
 
-  const captureScrollState = (dialog) => ({
-    pageY: window.scrollY,
-    areas: [...dialog.querySelectorAll('*')]
-      .filter((node) => node.scrollHeight > node.clientHeight)
-      .map((node) => ({ node, top: node.scrollTop, left: node.scrollLeft }))
-  });
+  // Restore only the list the user can actually see. Saving every nested
+  // scroll position fights Instagram's virtualized loader at the bottom.
+  const captureScrollState = (dialog) => {
+    const list = getScrollableList(dialog);
+    return {
+      pageY: window.scrollY,
+      list,
+      top: list?.scrollTop || 0,
+      left: list?.scrollLeft || 0
+    };
+  };
 
   const restoreScrollState = (state) => {
     requestAnimationFrame(() => requestAnimationFrame(() => {
       window.scrollTo({ top: state.pageY, left: 0, behavior: 'auto' });
-      for (const area of state.areas) {
-        if (area.node.isConnected) area.node.scrollTo({ top: area.top, left: area.left, behavior: 'auto' });
-      }
+      if (state.list?.isConnected) state.list.scrollTo({ top: state.top, left: state.left, behavior: 'auto' });
     }));
   };
 
   const getScrollableList = (dialog) => {
     const isScrollable = (node) => node.scrollHeight > node.clientHeight + 8;
-    const marked = [...dialog.querySelectorAll('.ig-following-scroll-area')].filter(isScrollable);
-    if (marked.length) return marked[0];
-    return [...dialog.querySelectorAll('*')].find(isScrollable) || null;
+    const isVisibleList = (node) => {
+      const box = node.getBoundingClientRect();
+      return box.width > 200 && box.height > 100 && box.bottom > 0 && box.top < window.innerHeight;
+    };
+    // The content script marks Instagram's actual profile-list scroller while
+    // styling the dialog. Prefer that explicit marker: Following currently
+    // exposes additional scrollable wrappers whose movement is not visible.
+    const marked = [...dialog.querySelectorAll('.ig-following-scroll-area')]
+      .filter(isScrollable)
+      .filter(isVisibleList);
+    if (marked.length) {
+      return marked.sort((a, b) => b.clientHeight - a.clientHeight)[0];
+    }
+    // In the current Instagram layout the visible scrollbar belongs to the
+    // modal panel. A nested scroll area exists too, but moving it has no
+    // visible effect, so prefer the panel explicitly.
+    const panel = dialog.querySelector('.ig-following-modal-panel');
+    if (panel && isScrollable(panel)) return panel;
+    const visible = [...dialog.querySelectorAll('*')]
+      .filter(isScrollable)
+      .filter(isVisibleList);
+    return visible.sort((a, b) => b.clientHeight - a.clientHeight)[0] || null;
   };
 
   const stopAutoScroll = () => {
     clearInterval(autoScrollTimer);
     autoScrollTimer = undefined;
-    autoScrollIdleTicks = 0;
   };
 
   const startAutoScroll = () => {
-    stopAutoScroll();
-    if (!settings.enabled || !settings.autoScroll) return;
+    // Settings changes reuse this function. Explicitly cancel an existing
+    // interval when Auto-scroll is turned off instead of leaving it running.
+    if (!settings.enabled || !settings.autoScroll) {
+      stopAutoScroll();
+      return;
+    }
+    if (autoScrollTimer) return;
     autoScrollTimer = setInterval(() => {
       const dialog = getDialogs().find(isFollowingDialog);
       const list = dialog && getScrollableList(dialog);
-      if (!list) return;
+      // A closed list should not leave a background timer behind. Opening a
+      // new Following/Followers dialog adds DOM nodes and starts it again.
+      if (!list) {
+        stopAutoScroll();
+        return;
+      }
       const remaining = list.scrollHeight - list.clientHeight - list.scrollTop;
+      if (remaining < 8) {
+        // Instagram can take several seconds to append the next virtualized
+        // page. Keep the timer alive at the edge so a delayed response is
+        // picked up instead of leaving auto-scroll permanently paused.
+        list.scrollBy({ top: 1, behavior: 'auto' });
+        return;
+      }
       list.scrollBy({ top: Math.max(120, Math.round(list.clientHeight * 0.55)), behavior: 'smooth' });
-      autoScrollIdleTicks = remaining < 8 ? autoScrollIdleTicks + 1 : 0;
-      // Pause after a few end-of-list passes. A mutation caused by Instagram
-      // loading another page automatically restarts the timer.
-      if (autoScrollIdleTicks >= 4) stopAutoScroll();
     }, 900);
   };
 
@@ -155,7 +200,9 @@
         }
       }
       for (const row of new Set(rows)) row.classList.toggle('ig-following-card', settings.enabled);
-      restoreScrollState(scrollState);
+      // During auto-scroll, Instagram owns the current position while it
+      // appends a new virtualized page. Restoring it here causes flashing.
+      if (!autoScrollTimer) restoreScrollState(scrollState);
     }
     startAutoScroll();
   };
@@ -197,12 +244,21 @@
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area !== 'sync') return;
       for (const [key, change] of Object.entries(changes)) settings[key] = change.newValue;
+      // Stop synchronously on a toggle. Waiting for the next animation frame
+      // allowed the previous interval to keep moving an already-disabled view.
+      if (changes.enabled?.newValue === false || changes.autoScroll?.newValue === false) {
+        stopAutoScroll();
+      }
       schedule();
     });
   } catch {
     // The extension still works with its default 88 px size.
   }
 
-  new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
+  new MutationObserver((mutations) => {
+    // Ignore removals produced by Instagram's virtual list. New profile nodes
+    // are the only mutations that require applying the card styling again.
+    if (mutations.some((mutation) => mutation.addedNodes.length > 0)) schedule();
+  }).observe(document.documentElement, { childList: true, subtree: true });
   window.addEventListener('resize', schedule);
 })();

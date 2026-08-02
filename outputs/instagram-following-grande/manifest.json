@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Following grande para Instagram",
-  "version": "1.7.1",
+  "version": "1.7.7",
   "description": "Amplía y organiza las fotos de Following y Followers en Instagram.",
   "permissions": ["storage", "scripting"],
   "host_permissions": ["https://www.instagram.com/*"],
