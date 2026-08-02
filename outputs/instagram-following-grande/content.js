@@ -1,18 +1,20 @@
 (() => {
-  const REFRESH_KEY = '__followingGrandeRefreshV3';
+  const REFRESH_KEY = '__followingGrandeRefreshV4';
   if (globalThis[REFRESH_KEY]) {
     globalThis[REFRESH_KEY]();
     return;
   }
 
   const ROOT_STYLE = document.documentElement.style;
-  const DEFAULTS = { enabled: true, layout: 'two', size: 280, settingsVersion: 4 };
+  const DEFAULTS = { enabled: true, layout: 'two', size: 280, autoScroll: false, settingsVersion: 5 };
   const LAYOUTS = {
     two: { columns: 2, suggestedSize: 280 },
     three: { columns: 3, suggestedSize: 190 }
   };
   let settings = { ...DEFAULTS };
   let queued = false;
+  let autoScrollTimer;
+  let autoScrollIdleTicks = 0;
 
   const getDialogs = () => [...document.querySelectorAll('[role="dialog"]')];
   const PAGE_POSITION_KEY = `ig-following-grande:scroll:${location.pathname}`;
@@ -95,6 +97,35 @@
     }));
   };
 
+  const getScrollableList = (dialog) => {
+    const isScrollable = (node) => node.scrollHeight > node.clientHeight + 8;
+    const marked = [...dialog.querySelectorAll('.ig-following-scroll-area')].filter(isScrollable);
+    if (marked.length) return marked[0];
+    return [...dialog.querySelectorAll('*')].find(isScrollable) || null;
+  };
+
+  const stopAutoScroll = () => {
+    clearInterval(autoScrollTimer);
+    autoScrollTimer = undefined;
+    autoScrollIdleTicks = 0;
+  };
+
+  const startAutoScroll = () => {
+    stopAutoScroll();
+    if (!settings.enabled || !settings.autoScroll) return;
+    autoScrollTimer = setInterval(() => {
+      const dialog = getDialogs().find(isFollowingDialog);
+      const list = dialog && getScrollableList(dialog);
+      if (!list) return;
+      const remaining = list.scrollHeight - list.clientHeight - list.scrollTop;
+      list.scrollBy({ top: Math.max(120, Math.round(list.clientHeight * 0.55)), behavior: 'smooth' });
+      autoScrollIdleTicks = remaining < 8 ? autoScrollIdleTicks + 1 : 0;
+      // Pause after a few end-of-list passes. A mutation caused by Instagram
+      // loading another page automatically restarts the timer.
+      if (autoScrollIdleTicks >= 4) stopAutoScroll();
+    }, 900);
+  };
+
   const enlarge = () => {
     queued = false;
     const layout = LAYOUTS[settings.layout] || LAYOUTS.two;
@@ -126,6 +157,7 @@
       for (const row of new Set(rows)) row.classList.toggle('ig-following-card', settings.enabled);
       restoreScrollState(scrollState);
     }
+    startAutoScroll();
   };
 
   const schedule = () => {
@@ -152,10 +184,11 @@
 
   try {
     chrome.storage.sync.get(DEFAULTS, (stored) => {
-      if (stored.settingsVersion !== 4) {
+      if (stored.settingsVersion !== 5) {
         stored.size = (LAYOUTS[stored.layout] || LAYOUTS.two).suggestedSize;
-        stored.settingsVersion = 4;
-        chrome.storage.sync.set({ size: stored.size, settingsVersion: 4 });
+        stored.autoScroll = false;
+        stored.settingsVersion = 5;
+        chrome.storage.sync.set({ size: stored.size, autoScroll: false, settingsVersion: 5 });
       }
       settings = { ...DEFAULTS, ...stored };
       schedule();

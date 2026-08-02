@@ -1,6 +1,6 @@
 # Following y Followers grande para Instagram
 
-Extensión local de Chrome que transforma las ventanas **Following** y **Followers** (también reconoce **Siguiendo** y **Seguidores**) en una cuadrícula. Permite elegir entre **2 columnas con fotos grandes** o **3 columnas con fotos semi grandes**, y ajustar manualmente el tamaño de las fotos con un slider. La ventana se amplía automáticamente y conserva la posición de scroll al actualizarse.
+Extensión local de Chrome que transforma las ventanas **Following** y **Followers** (también reconoce **Siguiendo** y **Seguidores**) en una cuadrícula. Permite elegir entre **2 columnas con fotos grandes** o **3 columnas con fotos semi grandes**, ajustar manualmente el tamaño de las fotos con un slider y activar un auto-scroll gradual para que Instagram cargue más perfiles. La ventana conserva la posición de scroll al actualizarse.
 
 ## Instalar
 
