@@ -1,0 +1,93 @@
+.ig-following-large-dialog {
+  width: min(98vw, 1200px) !important;
+  max-width: 98vw !important;
+  min-height: min(90vh, 940px) !important;
+}
+
+/* Instagram nests the visible modal several levels inside [role=dialog], each
+   with its own 560 px width. Carry the wider width down to the list shell. */
+.ig-following-large-dialog > *,
+.ig-following-large-dialog > * > *,
+.ig-following-large-dialog > * > * > *,
+.ig-following-large-dialog > * > * > * > *,
+.ig-following-large-dialog > * > * > * > * > *,
+.ig-following-large-dialog > * > * > * > * > * > *,
+.ig-following-large-dialog > * > * > * > * > * > * > * {
+  box-sizing: border-box !important;
+  width: min(98vw, 1200px) !important;
+  max-width: 98vw !important;
+}
+
+/* Reset the broad height rule from version 1.4.4. */
+.ig-following-large-dialog > *,
+.ig-following-large-dialog > * > *,
+.ig-following-large-dialog > * > * > *,
+.ig-following-large-dialog > * > * > * > * {
+  min-height: 0 !important;
+}
+
+/* The panel is identified by the content script as the first flex container
+   around the list. Enlarging this panel preserves Instagram's centering. */
+.ig-following-modal-panel {
+  height: min(78vh, 800px) !important;
+  min-height: min(78vh, 800px) !important;
+  max-height: 78vh !important;
+}
+
+.ig-following-scroll-area {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+}
+
+.ig-following-grid {
+  display: grid !important;
+  grid-template-columns: repeat(var(--ig-following-columns, 2), minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  align-items: stretch !important;
+  padding: 14px !important;
+}
+
+.ig-following-grid > .ig-following-grid-item {
+  min-width: 0 !important;
+}
+
+.ig-following-card {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  min-height: calc(var(--ig-following-avatar-size, 280px) + 115px) !important;
+  padding: 16px !important;
+  border: 1px solid rgba(115, 115, 115, .35) !important;
+  border-radius: 14px !important;
+  text-align: center !important;
+}
+
+.ig-following-card > * {
+  max-width: 100% !important;
+}
+
+.ig-following-large-avatar-wrapper {
+  width: var(--ig-following-avatar-size, 88px) !important;
+  height: var(--ig-following-avatar-size, 88px) !important;
+  min-width: var(--ig-following-avatar-size, 88px) !important;
+  min-height: var(--ig-following-avatar-size, 88px) !important;
+  flex: 0 0 var(--ig-following-avatar-size, 88px) !important;
+  overflow: visible !important;
+}
+
+.ig-following-large-avatar-wrapper img.ig-following-large-avatar {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: cover !important;
+}
+
+.ig-following-large-row {
+  min-height: calc(var(--ig-following-avatar-size, 280px) + 12px) !important;
+  align-items: center !important;
+}

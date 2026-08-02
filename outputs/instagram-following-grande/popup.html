@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="popup.css">
+    <title>Following y Followers</title>
+  </head>
+  <body>
+    <main>
+      <h1>Following y Followers</h1>
+      <label class="toggle"><input id="enabled" type="checkbox"><span>Activar en Instagram</span></label>
+      <fieldset>
+        <legend>Diseño de la cuadrícula</legend>
+        <label><input type="radio" name="layout" value="two"> 2 columnas · grandes</label>
+        <label><input type="radio" name="layout" value="three"> 3 columnas · semi grandes</label>
+      </fieldset>
+      <label for="size">Tamaño de foto <output id="value">280 px</output></label>
+      <input id="size" type="range" min="80" max="360" step="4" value="280">
+      <p>Abre <b>Following</b> o <b>Followers</b> y los cambios se aplican solos.</p>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>
