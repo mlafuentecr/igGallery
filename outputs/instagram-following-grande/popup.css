@@ -19,4 +19,6 @@ fieldset label { justify-content: flex-start; margin: 8px 0; }
 input[type="range"] { box-sizing: border-box; width: 100%; margin: 10px 0 12px; }
 output { font-variant-numeric: tabular-nums; }
 p { color: #666; font-size: 12px; line-height: 1.4; margin: 0; }
+.privacy-note { margin-top: 12px; }
+.disclaimer { margin-top: 8px; font-size: 11px; }
 @media (prefers-color-scheme: dark) { p { color: #aaa; } }

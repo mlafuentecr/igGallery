@@ -1,28 +1,28 @@
 {
   "manifest_version": 3,
-  "name": "Following grande para Instagram",
-  "version": "1.7.7",
-  "description": "Amplía y organiza las fotos de Following y Followers en Instagram.",
+  "name": "IG Gallery",
+  "version": "1.7.8",
+  "description": "Browse Instagram Following and Followers in a visual profile gallery.",
   "permissions": ["storage", "scripting"],
   "host_permissions": ["https://www.instagram.com/*"],
   "action": {
-    "default_title": "Following y Followers grande",
+    "default_title": "IG Gallery",
     "default_popup": "popup.html",
     "default_icon": {
-      "16": "icons/icon-red.png",
-      "32": "icons/icon-red.png",
-      "48": "icons/icon-red.png",
-      "128": "icons/icon-red.png"
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
     }
   },
   "background": {
     "service_worker": "background.js"
   },
   "icons": {
-    "16": "icons/icon-red.png",
-    "32": "icons/icon-red.png",
-    "48": "icons/icon-red.png",
-    "128": "icons/icon-red.png"
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
   },
   "content_scripts": [
     {
